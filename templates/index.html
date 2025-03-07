@@ -1,43 +1,944 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>V-Scan</title>
+    <title>Web Vulnerability Scanner</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            background-color: #f4f4f4;
-            padding: 50px;
+        :root {
+            --primary: #3498db;
+            --success: #2ecc71;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+            --dark: #34495e;
+            --light: #ecf0f1;
+            --border: #dfe4ea;
         }
-        h1 {
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
             color: #333;
         }
-        button {
-            padding: 10px 20px;
-            font-size: 16px;
-            cursor: pointer;
-            background-color: #007BFF;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            margin-top: 20px;
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
         }
-        button:hover {
-            background-color: #0056b3;
+
+        .header h1 {
+            color: var(--dark);
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #7f8c8d;
+            font-size: 1.1em;
+        }
+
+        .card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .scan-form {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        input {
+            flex: 1;
+            min-width: 300px;
+            padding: 12px 15px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 16px;
+            outline: none;
+            transition: border 0.3s;
+        }
+
+        input:focus {
+            border-color: var(--primary);
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 16px;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2980b9;
+        }
+
+        .btn-primary:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #27ae60;
+        }
+
+        .scan-status {
+            display: none;
+            margin: 20px 0;
+        }
+
+        .scan-info {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+
+        .timer {
+            font-size: 1em;
+            color: var(--dark);
+            font-weight: 600;
+        }
+
+        .progress-bar {
+            height: 8px;
+            width: 100%;
+            background-color: var(--light);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .progress-value {
+            height: 100%;
+            background-color: var(--primary);
+            border-radius: 4px;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            text-align: center;
+            font-size: 0.9em;
+            color: #7f8c8d;
+        }
+
+        .result-container {
+            display: none;
+        }
+
+        .result-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .result-header {
+            padding: 15px 20px;
+            background: var(--dark);
+            color: white;
+        }
+
+        .result-body {
+            padding: 20px;
+        }
+
+        .result-item {
+            padding: 10px 15px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+        }
+
+        .safe {
+            background: rgba(46, 204, 113, 0.1);
+            border-left: 4px solid var(--success);
+        }
+
+        .warning {
+            background: rgba(243, 156, 18, 0.1);
+            border-left: 4px solid var(--warning);
+        }
+
+        .critical {
+            background: rgba(231, 76, 60, 0.1);
+            border-left: 4px solid var(--danger);
+        }
+
+        .tech-stack {
+            margin: 20px 0;
+        }
+
+        .tech-category h3 {
+            color: var(--dark);
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .tech-item {
+            display: inline-block;
+            margin: 3px;
+            padding: 5px 10px;
+            background: var(--light);
+            border-radius: 15px;
+            font-size: 0.9em;
+        }
+
+        .popup {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 6px;
+            color: white;
+            font-weight: 500;
+            z-index: 1000;
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .popup.success {
+            background: var(--success);
+        }
+
+        .popup.error {
+            background: var(--danger);
+        }
+
+        .popup.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .report-section {
+            margin-top: 30px;
+            display: none;
+        }
+
+        .report-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .report-content {
+            white-space: pre-wrap;
+            background: white;
+            padding: 20px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            height: 300px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+
+        /* Report styling */
+        .report-content {
+            white-space: pre-wrap;
+            background: white;
+            padding: 20px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            height: 500px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+        }
+
+        .report-content h1,
+        .report-content h2,
+        .report-content h3,
+        .report-content h4,
+        .report-content h5,
+        .report-content h6 {
+            color: var(--dark);
+            margin-top: 1.5em;
+            margin-bottom: 0.5em;
+        }
+
+        .report-content h1 {
+            font-size: 1.8em;
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 0.3em;
+        }
+
+        .report-content h2 {
+            font-size: 1.5em;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0.2em;
+        }
+
+        .report-content h3 {
+            font-size: 1.3em;
+        }
+
+        .report-content h4 {
+            font-size: 1.1em;
+        }
+
+        .report-content ul,
+        .report-content ol {
+            padding-left: 2em;
+            margin-bottom: 1em;
+        }
+
+        .report-content li {
+            margin-bottom: 0.5em;
+        }
+
+        .report-content code {
+            background-color: #f5f5f5;
+            padding: 0.2em 0.4em;
+            border-radius: 3px;
+            font-family: Consolas, Monaco, 'Andale Mono', monospace;
+            font-size: 0.9em;
+        }
+
+        /* Severity coloring for report text */
+        .severity-critical,
+        .cvss-critical {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+
+        .severity-high,
+        .cvss-high {
+            color: #e67e22;
+            font-weight: bold;
+        }
+
+        .severity-medium,
+        .cvss-medium {
+            color: #f39c12;
+            font-weight: bold;
+        }
+
+        .severity-low,
+        .cvss-low {
+            color: #3498db;
+            font-weight: bold;
+        }
+
+        .severity-safe,
+        .cvss-info {
+            color: #2ecc71;
+            font-weight: bold;
+        }
+
+        /* Improved result item styling */
+        .result-item {
+            display: flex;
+            padding: 12px 15px;
+            margin-bottom: 12px;
+            border-radius: 6px;
+            align-items: flex-start;
+        }
+
+        .result-icon {
+            margin-right: 12px;
+            font-size: 1.2em;
+        }
+
+        .result-content {
+            flex: 1;
+        }
+
+        .result-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .result-description {
+            color: #555;
+            font-size: 0.95em;
+        }
+
+        .icon-critical {
+            color: var(--danger);
+        }
+
+        .icon-warning {
+            color: var(--warning);
+        }
+
+        .icon-safe {
+            color: var(--success);
+        }
+
+        /* Loading animation */
+        .loading {
+            text-align: center;
+            padding: 30px;
+            color: #7f8c8d;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            margin: 15px auto;
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* CVSS calculator styling */
+        .cvss-calculator {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+        }
+
+        .cvss-calculator h3 {
+            margin-top: 0;
+            color: var(--dark);
+        }
+
+        .cvss-form {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .cvss-group {
+            margin-bottom: 10px;
+        }
+
+        .cvss-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        .cvss-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+        }
+
+        .cvss-result {
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+
+        .cvss-score {
+            font-size: 1.2em;
+            font-weight: bold;
+            text-align: center;
+            padding: 10px;
+            border-radius: 4px;
+        }
+
+        .score-critical {
+            background-color: rgba(231, 76, 60, 0.1);
+            color: #e74c3c;
+        }
+
+        .score-high {
+            background-color: rgba(230, 126, 34, 0.1);
+            color: #e67e22;
+        }
+
+        .score-medium {
+            background-color: rgba(243, 156, 18, 0.1);
+            color: #f39c12;
+        }
+
+        .score-low {
+            background-color: rgba(52, 152, 219, 0.1);
+            color: #3498db;
+        }
+
+        .score-none {
+            background-color: rgba(46, 204, 113, 0.1);
+            color: #2ecc71;
+        }
+
+        @media (max-width: 768px) {
+            .scan-form {
+                flex-direction: column;
+            }
+
+            input,
+            .btn {
+                width: 100%;
+            }
         }
     </style>
 </head>
+
 <body>
-    <h1>Welcome to V-Scan</h1>
-    <p>Your security scanning solution.</p>
-    <button onclick="showMessage()">Click Me</button>
+    <div class="header">
+        <h1>Web Vulnerability Scanner</h1>
+        <p>Analyze websites for security vulnerabilities and generate AI-powered reports</p>
+    </div>
+
+    <div class="card">
+        <div class="scan-form">
+            <input type="text" id="urlInput" placeholder="Enter website URL (e.g., https://example.com)">
+            <button class="btn btn-primary" onclick="startScan()" id="scanButton">Scan Website</button>
+        </div>
+
+        <div id="scanStatus" class="scan-status">
+            <div class="scan-info">
+                <div class="timer" id="timer">Elapsed: 00:00</div>
+                <div id="scanDetails">Starting scan...</div>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-value" id="progressValue"></div>
+            </div>
+            <div class="progress-text" id="progressText">0%</div>
+        </div>
+    </div>
+
+    <div id="resultContainer" class="result-container">
+        <div class="result-card">
+            <div class="result-header">
+                <h2>Scan Results</h2>
+            </div>
+            <div class="result-body">
+                <div id="result"></div>
+            </div>
+        </div>
+        <label for="cvss">Select CVSS Version:</label>
+        <select id="cvss">
+            <option value="CVSS v3.1">CVSS v3.1</option>
+            <option value="CVSS v2.0">CVSS v2.0</option>
+        </select>
+
+        <div class="report-section" id="reportSection">
+            <div class="card">
+                <h2>AI-Generated Security Report</h2>
+                <div class="report-options">
+                    <button class="btn btn-primary" onclick="generateReport()" id="generateReportBtn">Generate
+                        Report</button>
+                    <button onclick="downloadReport()">Download Report as PDF</button>
+                    <button class="btn btn-success" onclick="downloadReport()" id="downloadReportBtn" disabled>Download
+                        Report</button>
+                </div>
+                <div id="reportContent" class="report-content">
+                    Click "Generate Report" to create an AI-powered security analysis based on the scan results.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="popup" class="popup"></div>
 
     <script>
-        function showMessage() {
-            alert("V-Scan is ready to secure your applications!");
+        let startTime;
+        let timerInterval;
+        let totalTests = 10;
+        let completedTests = 0;
+        let scanResults = [];
+        let reportContent = "";
+
+        function updateTimer() {
+            const currentTime = new Date().getTime();
+            const elapsedTime = Math.floor((currentTime - startTime) / 1000);
+            const minutes = Math.floor(elapsedTime / 60).toString().padStart(2, '0');
+            const seconds = (elapsedTime % 60).toString().padStart(2, '0');
+            document.getElementById('timer').textContent = `Elapsed: ${minutes}:${seconds}`;
+        }
+
+        function updateProgress(completed, total) {
+            const percentage = Math.round((completed / total) * 100);
+            document.getElementById('progressValue').style.width = `${percentage}%`;
+            document.getElementById('progressText').textContent = `${percentage}% Complete`;
+            document.getElementById('scanDetails').textContent =
+                `Completed ${completed} of ${total} tests`;
+        }
+
+        function startScan() {
+            const url = document.getElementById('urlInput').value.trim();
+            if (!url) {
+                showPopup('Please enter a valid URL', true);
+                return;
+            }
+
+            // Reset and show progress elements
+            document.getElementById('result').innerHTML = '';
+            document.getElementById('scanStatus').style.display = 'block';
+            document.getElementById('scanButton').disabled = true;
+            document.getElementById('resultContainer').style.display = 'none';
+            document.getElementById('reportSection').style.display = 'none';
+            document.getElementById('reportContent').textContent = 'Click "Generate Report" to create an AI-powered security analysis based on the scan results.';
+            document.getElementById('downloadReportBtn').disabled = true;
+            scanResults = [];
+
+            // Initialize timer
+            startTime = new Date().getTime();
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(updateTimer, 1000);
+
+            // Reset progress
+            totalTests = 10;
+            completedTests = 0;
+            updateProgress(0, 10); // Initial state
+
+            // Show the popup
+            showPopup('Scan started...', false);
+
+            // Start the scan
+            fetch('http://127.0.0.1:5000/scan', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ url })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    const scanId = data.scan_id;
+                    listenForResults(scanId);
+                })
+                .catch(error => {
+                    showPopup('Error: ' + error, true);
+                    resetScanUI();
+                });
+        }
+
+        function resetScanUI() {
+            clearInterval(timerInterval);
+            document.getElementById('scanButton').disabled = false;
+            document.getElementById('scanStatus').style.display = 'none';
+        }
+
+        function displayTechStack(data) {
+            const resultDiv = document.createElement('div');
+            resultDiv.className = 'tech-stack';
+
+            Object.entries(data).forEach(([category, items]) => {
+                if (items && items.length > 0) {
+                    const categoryDiv = document.createElement('div');
+                    categoryDiv.className = 'tech-category';
+
+                    const title = document.createElement('h3');
+                    title.textContent = category;
+                    categoryDiv.appendChild(title);
+
+                    items.forEach(item => {
+                        const techItem = document.createElement('span');
+                        techItem.className = 'tech-item';
+                        techItem.textContent = item;
+                        categoryDiv.appendChild(techItem);
+                    });
+
+                    resultDiv.appendChild(categoryDiv);
+                }
+            });
+
+            return resultDiv;
+        }
+
+        function listenForResults(scanId) {
+            const eventSource = new EventSource(`http://127.0.0.1:5000/scan-results/${scanId}`);
+
+            eventSource.onmessage = function (event) {
+                try {
+                    const data = JSON.parse(event.data);
+
+                    if (data.error) {
+                        showPopup(data.error, true);
+                        resetScanUI();
+                        return;
+                    }
+
+                    if (data.total_tests && totalTests !== data.total_tests) {
+                        totalTests = data.total_tests;
+                    }
+
+                    if (data.testName && data.result) {
+                        completedTests++;
+                        updateProgress(completedTests, totalTests);
+
+                        // Store results for the report generation
+                        scanResults.push(data);
+
+                        const resultDiv = document.getElementById('result');
+                        const resultItem = document.createElement('div');
+                        resultItem.className = `result-item ${data.severity || 'info'}`;
+                        resultItem.textContent = `${data.testName}: ${data.result}`;
+                        resultDiv.appendChild(resultItem);
+                    }
+
+                    if (data.complete) {
+                        resetScanUI();
+                        document.getElementById('resultContainer').style.display = 'block';
+                        document.getElementById('reportSection').style.display = 'block';
+                        eventSource.close();
+                        showPopup('Scan completed!', false);
+                    }
+
+                } catch (error) {
+                    console.error('Error parsing result data:', error);
+                    showPopup('Error processing scan results', true);
+                    resetScanUI();
+                    eventSource.close();
+                }
+            };
+
+            eventSource.onerror = function () {
+                showPopup('An error occurred during the scan.', true);
+                resetScanUI();
+                eventSource.close();
+            };
+        }
+
+        function showPopup(message, isError = false) {
+            const popup = document.getElementById('popup');
+            popup.textContent = message;
+            popup.className = isError ? 'popup error' : 'popup success';
+            popup.classList.add('show');
+
+            setTimeout(() => {
+                popup.classList.remove('show');
+            }, 4000);
+        }
+
+        function generateReport() {
+            const url = document.getElementById('urlInput').value.trim();
+            const cvssVersion = document.getElementById('cvss').value;
+
+            if (scanResults.length === 0) {
+                showPopup('No scan results available to generate report', true);
+                return;
+            }
+
+            document.getElementById('generateReportBtn').disabled = true;
+            document.getElementById('generateReportBtn').textContent = 'Generating...';
+            document.getElementById('reportContent').innerHTML = '<div class="loading">Generating AI security report...<div class="spinner"></div></div>';
+
+            // Prepare scan results for the API
+            const resultsForAI = scanResults.map(item => {
+                return {
+                    test: item.testName,
+                    result: item.result,
+                    severity: item.severity
+                };
+            });
+
+            // Call backend endpoint for AI report generation
+            fetch('http://127.0.0.1:5000/generate-report', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    url: url,
+                    results: resultsForAI,
+                    cvssVersion: cvssVersion
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        showPopup('Error generating report: ' + data.error, true);
+                        document.getElementById('reportContent').textContent = 'Failed to generate report.';
+                    } else {
+                        reportContent = data.report;
+
+                        // Convert markdown to HTML
+                        const formattedReport = formatMarkdownReport(reportContent);
+                        document.getElementById('reportContent').innerHTML = formattedReport;
+
+                        document.getElementById('downloadReportBtn').disabled = false;
+                        showPopup('Report generated successfully!', false);
+                    }
+                })
+                .catch(error => {
+                    showPopup('Error: ' + error, true);
+                    document.getElementById('reportContent').textContent = 'Failed to generate report.';
+                })
+                .finally(() => {
+                    document.getElementById('generateReportBtn').disabled = false;
+                    document.getElementById('generateReportBtn').textContent = 'Generate Report';
+                });
+        }
+
+        // Add a function to format markdown to HTML with syntax highlighting
+        function formatMarkdownReport(markdown) {
+            // Basic markdown to HTML conversion
+            // Headers
+            let html = markdown
+                .replace(/^# (.*$)/gm, '<h1>$1</h1>')
+                .replace(/^## (.*$)/gm, '<h2>$1</h2>')
+                .replace(/^### (.*$)/gm, '<h3>$1</h3>')
+                .replace(/^#### (.*$)/gm, '<h4>$1</h4>')
+                .replace(/^##### (.*$)/gm, '<h5>$1</h5>')
+                .replace(/^###### (.*$)/gm, '<h6>$1</h6>');
+
+            // Bold and italic
+            html = html
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/\_\_(.*?)\_\_/g, '<strong>$1</strong>')
+                .replace(/\_(.*?)\_/g, '<em>$1</em>');
+
+            // Newlines
+            html = html.replace(/\n/g, '<br/>');
+
+            // Lists
+            html = html.replace(/^\s*\-\s*(.*$)/gm, '<li>$1</li>');
+            html = html.replace(/(<li>.*<\/li>)/gs, '<ul>$1</ul>');
+
+            // Code blocks
+            html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+            // Highlight severity text with colors
+            html = html
+                .replace(/Critical Vulnerabilities/g, '<span class="severity-critical">Critical Vulnerabilities</span>')
+                .replace(/Medium-Risk Issues/g, '<span class="severity-medium">Medium-Risk Issues</span>')
+                .replace(/Secure Configurations/g, '<span class="severity-safe">Secure Configurations</span>')
+                .replace(/Critical/g, '<span class="severity-critical">Critical</span>')
+                .replace(/High/g, '<span class="severity-high">High</span>')
+                .replace(/Medium/g, '<span class="severity-medium">Medium</span>')
+                .replace(/Low/g, '<span class="severity-low">Low</span>');
+
+            // Highlight CVSS scores
+            const cvssScorePattern = /CVSS Score: (\d+\.\d+)/g;
+            html = html.replace(cvssScorePattern, function (match, score) {
+                const scoreNum = parseFloat(score);
+                let scoreClass = 'cvss-info';
+
+                if (scoreNum >= 9.0) scoreClass = 'cvss-critical';
+                else if (scoreNum >= 7.0) scoreClass = 'cvss-high';
+                else if (scoreNum >= 4.0) scoreClass = 'cvss-medium';
+                else if (scoreNum > 0) scoreClass = 'cvss-low';
+
+                return `CVSS Score: <span class="${scoreClass}">${score}</span>`;
+            });
+
+            return html;
+        }
+
+        // Updated download report function
+        function downloadReport() {
+            const filename = "security_report_" + document.getElementById('urlInput').value.replace(/[^a-z0-9]/gi, '_').toLowerCase() + ".pdf";
+            const url = document.getElementById('urlInput').value.trim();
+
+            document.getElementById('downloadReportBtn').disabled = true;
+            document.getElementById('downloadReportBtn').textContent = 'Generating PDF...';
+
+            fetch('http://127.0.0.1:5000/download-report', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    url: url,
+                    report: reportContent
+                })
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to generate PDF');
+                    }
+                    return response.blob();
+                })
+                .then(blob => {
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(blob);
+                    link.download = filename;
+                    link.click();
+                    showPopup('Report downloaded!', false);
+                })
+                .catch(error => {
+                    showPopup('Error downloading report: ' + error, true);
+                })
+                .finally(() => {
+                    document.getElementById('downloadReportBtn').disabled = false;
+                    document.getElementById('downloadReportBtn').textContent = 'Download Report';
+                });
+        }
+
+        // Helper function to display test results with better formatting
+        function displayResult(data) {
+            const resultDiv = document.getElementById('result');
+            const resultItem = document.createElement('div');
+            resultItem.className = `result-item ${data.severity || 'info'}`;
+
+            // Create the icon element based on severity
+            const icon = document.createElement('span');
+            icon.className = 'result-icon';
+
+            if (data.severity === 'critical') {
+                icon.innerHTML = '❌';
+                icon.className += ' icon-critical';
+            } else if (data.severity === 'warning') {
+                icon.innerHTML = '⚠️';
+                icon.className += ' icon-warning';
+            } else {
+                icon.innerHTML = '✅';
+                icon.className += ' icon-safe';
+            }
+
+            // Create the content element
+            const content = document.createElement('div');
+            content.className = 'result-content';
+
+            const title = document.createElement('div');
+            title.className = 'result-title';
+            title.textContent = data.testName;
+
+            const description = document.createElement('div');
+            description.className = 'result-description';
+            description.textContent = data.result;
+
+            content.appendChild(title);
+            content.appendChild(description);
+
+            // Add elements to the result item
+            resultItem.appendChild(icon);
+            resultItem.appendChild(content);
+
+            // Add the result item to the results container
+            resultDiv.appendChild(resultItem);
         }
     </script>
 </body>
-</html>
+
+</html> 
