@@ -533,388 +533,389 @@
 
     <div id="popup" class="popup"></div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script>
-      let startTime;
-      let timerInterval;
-      let totalTests = 10;
-      let completedTests = 0;
-      let scanResults = [];
-      let reportContent = "";
+      <script>
+        let startTime;
+        let timerInterval;
+        let totalTests = 10;
+        let completedTests = 0;
+        let scanResults = [];
+        let reportContent = "";
 
-      function updateTimer() {
-        const currentTime = new Date().getTime();
-        const elapsedTime = Math.floor((currentTime - startTime) / 1000);
-        const minutes = Math.floor(elapsedTime / 60)
-          .toString()
-          .padStart(2, "0");
-        const seconds = (elapsedTime % 60).toString().padStart(2, "0");
-        document.getElementById(
-          "timer"
-        ).textContent = `Elapsed: ${minutes}:${seconds}`;
-      }
-
-      function updateProgress(completed, total) {
-        const percentage = Math.round((completed / total) * 100);
-        document.getElementById("progressValue").style.width = `${percentage}%`;
-        document.getElementById(
-          "progressText"
-        ).textContent = `${percentage}% Complete`;
-        document.getElementById(
-          "scanDetails"
-        ).textContent = `Completed ${completed} of ${total} tests`;
-      }
-
-      function startScan() {
-        const url = document.getElementById("urlInput").value.trim();
-        if (!url) {
-          showPopup("Please enter a valid URL", true);
-          return;
+        function updateTimer() {
+          const currentTime = new Date().getTime();
+          const elapsedTime = Math.floor((currentTime - startTime) / 1000);
+          const minutes = Math.floor(elapsedTime / 60)
+            .toString()
+            .padStart(2, "0");
+          const seconds = (elapsedTime % 60).toString().padStart(2, "0");
+          document.getElementById(
+            "timer"
+          ).textContent = `Elapsed: ${minutes}:${seconds}`;
         }
 
-        // Reset and show progress elements
-        document.getElementById("result").innerHTML = "";
-        document.getElementById("scanStatus").style.display = "block";
-        document.getElementById("scanButton").disabled = true;
-        document.getElementById("resultContainer").style.display = "none";
-        document.getElementById("reportSection").style.display = "none";
-        document.getElementById("reportContent").textContent =
-          'Click "Generate Report" to create an AI-powered security analysis based on the scan results.';
-        document.getElementById("downloadReportBtn").disabled = true;
-        scanResults = [];
+        function updateProgress(completed, total) {
+          const percentage = Math.round((completed / total) * 100);
+          document.getElementById("progressValue").style.width = `${percentage}%`;
+          document.getElementById(
+            "progressText"
+          ).textContent = `${percentage}% Complete`;
+          document.getElementById(
+            "scanDetails"
+          ).textContent = `Completed ${completed} of ${total} tests`;
+        }
 
-        // Initialize timer
-        startTime = new Date().getTime();
-        if (timerInterval) clearInterval(timerInterval);
-        timerInterval = setInterval(updateTimer, 1000);
-
-        // Reset progress
-        totalTests = 10;
-        completedTests = 0;
-        updateProgress(0, 10); // Initial state
-
-        // Show the popup
-        showPopup("Scan started...", false);
-
-        // Start the scan
-        fetch("http://127.0.0.1:5000/scan", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ url }),
-        })
-          .then((response) => response.json())
-          .then((data) => {
-            const scanId = data.scan_id;
-            listenForResults(scanId);
-          })
-          .catch((error) => {
-            showPopup("Error: " + error, true);
-            resetScanUI();
-          });
-      }
-
-      function resetScanUI() {
-        clearInterval(timerInterval);
-        document.getElementById("scanButton").disabled = false;
-        document.getElementById("scanStatus").style.display = "none";
-      }
-
-      function displayTechStack(data) {
-        const resultDiv = document.createElement("div");
-        resultDiv.className = "tech-stack";
-
-        Object.entries(data).forEach(([category, items]) => {
-          if (items && items.length > 0) {
-            const categoryDiv = document.createElement("div");
-            categoryDiv.className = "tech-category";
-
-            const title = document.createElement("h3");
-            title.textContent = category;
-            categoryDiv.appendChild(title);
-
-            items.forEach((item) => {
-              const techItem = document.createElement("span");
-              techItem.className = "tech-item";
-              techItem.textContent = item;
-              categoryDiv.appendChild(techItem);
-            });
-
-            resultDiv.appendChild(categoryDiv);
+        function startScan() {
+          const url = document.getElementById("urlInput").value.trim();
+          if (!url) {
+            showPopup("Please enter a valid URL", true);
+            return;
           }
-        });
 
-        return resultDiv;
-      }
+          // Reset and show progress elements
+          document.getElementById("result").innerHTML = "";
+          document.getElementById("scanStatus").style.display = "block";
+          document.getElementById("scanButton").disabled = true;
+          document.getElementById("resultContainer").style.display = "none";
+          document.getElementById("reportSection").style.display = "none";
+          document.getElementById("reportContent").textContent =
+            'Click "Generate Report" to create an AI-powered security analysis based on the scan results.';
+          document.getElementById("downloadReportBtn").disabled = true;
+          scanResults = [];
 
-      function listenForResults(scanId) {
-        const eventSource = new EventSource(
-          `http://127.0.0.1:5000/scan-results/${scanId}`
-        );
+          // Initialize timer
+          startTime = new Date().getTime();
+          if (timerInterval) clearInterval(timerInterval);
+          timerInterval = setInterval(updateTimer, 1000);
 
-        eventSource.onmessage = function (event) {
-          try {
-            const data = JSON.parse(event.data);
+          // Reset progress
+          totalTests = 10;
+          completedTests = 0;
+          updateProgress(0, 10); // Initial state
 
-            if (data.error) {
-              showPopup(data.error, true);
+          // Show the popup
+          showPopup("Scan started...", false);
+
+          // Start the scan
+          fetch("http://127.0.0.1:5000/scan", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ url }),
+          })
+            .then((response) => response.json())
+            .then((data) => {
+              const scanId = data.scan_id;
+              listenForResults(scanId);
+            })
+            .catch((error) => {
+              showPopup("Error: " + error, true);
               resetScanUI();
-              return;
+            });
+        }
+
+        function resetScanUI() {
+          clearInterval(timerInterval);
+          document.getElementById("scanButton").disabled = false;
+          document.getElementById("scanStatus").style.display = "none";
+        }
+
+        function displayTechStack(data) {
+          const resultDiv = document.createElement("div");
+          resultDiv.className = "tech-stack";
+
+          Object.entries(data).forEach(([category, items]) => {
+            if (items && items.length > 0) {
+              const categoryDiv = document.createElement("div");
+              categoryDiv.className = "tech-category";
+
+              const title = document.createElement("h3");
+              title.textContent = category;
+              categoryDiv.appendChild(title);
+
+              items.forEach((item) => {
+                const techItem = document.createElement("span");
+                techItem.className = "tech-item";
+                techItem.textContent = item;
+                categoryDiv.appendChild(techItem);
+              });
+
+              resultDiv.appendChild(categoryDiv);
             }
+          });
 
-            if (data.total_tests && totalTests !== data.total_tests) {
-              totalTests = data.total_tests;
-            }
+          return resultDiv;
+        }
 
-            if (data.testName && data.result) {
-              completedTests++;
-              updateProgress(completedTests, totalTests);
+        function listenForResults(scanId) {
+          const eventSource = new EventSource(
+            `http://127.0.0.1:5000/scan-results/${scanId}`
+          );
 
-              // Store results for the report generation
-              scanResults.push(data);
+          eventSource.onmessage = function (event) {
+            try {
+              const data = JSON.parse(event.data);
 
-              const resultDiv = document.getElementById("result");
-              const resultItem = document.createElement("div");
-              resultItem.className = `result-item ${data.severity || "info"}`;
-              resultItem.textContent = `${data.testName}: ${data.result}`;
-              resultDiv.appendChild(resultItem);
-            }
+              if (data.error) {
+                showPopup(data.error, true);
+                resetScanUI();
+                return;
+              }
 
-            if (data.complete) {
+              if (data.total_tests && totalTests !== data.total_tests) {
+                totalTests = data.total_tests;
+              }
+
+              if (data.testName && data.result) {
+                completedTests++;
+                updateProgress(completedTests, totalTests);
+
+                // Store results for the report generation
+                scanResults.push(data);
+
+                const resultDiv = document.getElementById("result");
+                const resultItem = document.createElement("div");
+                resultItem.className = `result-item ${data.severity || "info"}`;
+                resultItem.textContent = `${data.testName}: ${data.result}`;
+                resultDiv.appendChild(resultItem);
+              }
+
+              if (data.complete) {
+                resetScanUI();
+                document.getElementById("resultContainer").style.display =
+                  "block";
+                document.getElementById("reportSection").style.display = "block";
+                eventSource.close();
+                showPopup("Scan completed!", false);
+              }
+            } catch (error) {
+              console.error("Error parsing result data:", error);
+              showPopup("Error processing scan results", true);
               resetScanUI();
-              document.getElementById("resultContainer").style.display =
-                "block";
-              document.getElementById("reportSection").style.display = "block";
               eventSource.close();
-              showPopup("Scan completed!", false);
             }
-          } catch (error) {
-            console.error("Error parsing result data:", error);
-            showPopup("Error processing scan results", true);
+          };
+
+          eventSource.onerror = function () {
+            showPopup("An error occurred during the scan.", true);
             resetScanUI();
             eventSource.close();
-          }
-        };
-
-        eventSource.onerror = function () {
-          showPopup("An error occurred during the scan.", true);
-          resetScanUI();
-          eventSource.close();
-        };
-      }
-
-      function showPopup(message, isError = false) {
-        const popup = document.getElementById("popup");
-        popup.textContent = message;
-        popup.className = isError ? "popup error" : "popup success";
-        popup.classList.add("show");
-
-        setTimeout(() => {
-          popup.classList.remove("show");
-        }, 4000);
-      }
-
-      function generateReport() {
-        const url = document.getElementById("urlInput").value.trim();
-
-        if (scanResults.length === 0) {
-          showPopup("No scan results available to generate report", true);
-          return;
+          };
         }
 
-        document.getElementById("generateReportBtn").disabled = true;
-        document.getElementById("generateReportBtn").textContent =
-          "Generating...";
-        document.getElementById("reportContent").innerHTML =
-          '<div class="loading">Generating AI security report...<div class="spinner"></div></div>';
+        function showPopup(message, isError = false) {
+          const popup = document.getElementById("popup");
+          popup.textContent = message;
+          popup.className = isError ? "popup error" : "popup success";
+          popup.classList.add("show");
 
-        // Prepare scan results for the API
-        const resultsForAI = scanResults.map((item) => {
-          return {
-            test: item.testName,
-            result: item.result,
-            severity: item.severity,
-          };
-        });
+          setTimeout(() => {
+            popup.classList.remove("show");
+          }, 4000);
+        }
 
-        // Call backend endpoint for AI report generation
-        fetch("http://127.0.0.1:5000/generate-report", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            url: url,
-            results: resultsForAI,
-          }),
-        })
-          .then((response) => response.json())
-          .then((data) => {
-            if (data.error) {
-              showPopup("Error generating report: " + data.error, true);
+        function generateReport() {
+          const url = document.getElementById("urlInput").value.trim();
+
+          if (scanResults.length === 0) {
+            showPopup("No scan results available to generate report", true);
+            return;
+          }
+
+          document.getElementById("generateReportBtn").disabled = true;
+          document.getElementById("generateReportBtn").textContent =
+            "Generating...";
+          document.getElementById("reportContent").innerHTML =
+            '<div class="loading">Generating AI security report...<div class="spinner"></div></div>';
+
+          // Prepare scan results for the API
+          const resultsForAI = scanResults.map((item) => {
+            return {
+              test: item.testName,
+              result: item.result,
+              severity: item.severity,
+            };
+          });
+
+          // Call backend endpoint for AI report generation
+          fetch("http://127.0.0.1:5000/generate-report", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              url: url,
+              results: resultsForAI,
+            }),
+          })
+            .then((response) => response.json())
+            .then((data) => {
+              console.log("Report Response:", data); // Debugging Line
+              if (data.error) {
+                showPopup("Error generating report: " + data.error, true);
+                document.getElementById("reportContent").textContent =
+                  "Failed to generate report.";
+              } else {
+                reportContent = data.report;
+
+                // Convert markdown to HTML
+                const formattedReport = formatMarkdownReport(reportContent);
+                document.getElementById("reportContent").innerHTML =
+                  formattedReport;
+
+                document.getElementById("downloadReportBtn").disabled = false;
+                showPopup("Report generated successfully!", false);
+              }
+            })
+            .catch((error) => {
+              showPopup("Error: " + error, true);
               document.getElementById("reportContent").textContent =
                 "Failed to generate report.";
-            } else {
-              reportContent = data.report;
-
-              // Convert markdown to HTML
-              const formattedReport = formatMarkdownReport(reportContent);
-              document.getElementById("reportContent").innerHTML =
-                formattedReport;
-
-              document.getElementById("downloadReportBtn").disabled = false;
-              showPopup("Report generated successfully!", false);
-            }
-          })
-          .catch((error) => {
-            showPopup("Error: " + error, true);
-            document.getElementById("reportContent").textContent =
-              "Failed to generate report.";
-          })
-          .finally(() => {
-            document.getElementById("generateReportBtn").disabled = false;
-            document.getElementById("generateReportBtn").textContent =
-              "Generate Report";
-          });
-      }
-
-      // Add a function to format markdown to HTML with syntax highlighting
-      function formatMarkdownReport(markdown) {
-        // Basic markdown to HTML conversion
-        // Headers
-        let html = markdown
-          .replace(/^# (.*$)/gm, "<h1>$1</h1>")
-          .replace(/^## (.*$)/gm, "<h2>$1</h2>")
-          .replace(/^### (.*$)/gm, "<h3>$1</h3>")
-          .replace(/^#### (.*$)/gm, "<h4>$1</h4>")
-          .replace(/^##### (.*$)/gm, "<h5>$1</h5>")
-          .replace(/^###### (.*$)/gm, "<h6>$1</h6>");
-
-        // Bold and italic
-        html = html
-          .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-          .replace(/\*(.*?)\*/g, "<em>$1</em>")
-          .replace(/\_\_(.*?)\_\_/g, "<strong>$1</strong>")
-          .replace(/\_(.*?)\_/g, "<em>$1</em>");
-
-        // Newlines
-        html = html.replace(/\n/g, "<br/>");
-
-        // Lists
-        html = html.replace(/^\s*\-\s*(.*$)/gm, "<li>$1</li>");
-        html = html.replace(/(<li>.*<\/li>)/gs, "<ul>$1</ul>");
-
-        // Code blocks
-        html = html.replace(/`([^`]+)`/g, "<code>$1</code>");
-
-        // Highlight severity text with colors
-        html = html
-          .replace(
-            /Critical Vulnerabilities/g,
-            '<span class="severity-critical">Critical Vulnerabilities</span>'
-          )
-          .replace(
-            /Medium-Risk Issues/g,
-            '<span class="severity-medium">Medium-Risk Issues</span>'
-          )
-          .replace(
-            /Secure Configurations/g,
-            '<span class="severity-safe">Secure Configurations</span>'
-          )
-          .replace(
-            /Critical/g,
-            '<span class="severity-critical">Critical</span>'
-          )
-          .replace(/High/g, '<span class="severity-high">High</span>')
-          .replace(/Medium/g, '<span class="severity-medium">Medium</span>')
-          .replace(/Low/g, '<span class="severity-low">Low</span>');
-        return html;
-      }
-
-      // Download report function
-      function downloadReport() {
-        const { jsPDF } = window.jspdf; // Access jsPDF from the global object
-
-        const filename =
-          "security_report_" +
-          document
-            .getElementById("urlInput")
-            .value.replace(/[^a-z0-9]/gi, "_")
-            .toLowerCase() +
-          ".pdf";
-        const reportContent = document.getElementById("reportContent").innerText; // Assuming this element has report data
-
-        document.getElementById("downloadReportBtn").disabled = true;
-        document.getElementById("downloadReportBtn").textContent =
-          "Generating PDF...";
-
-        // Using jsPDF library
-        const doc = new jsPDF();
-        const pageHeight = doc.internal.pageSize.height;
-        let y = 10; // Starting Y position for text
-
-        const lines = doc.splitTextToSize(reportContent, 180); // Split text into multiple lines
-        lines.forEach((line, index) => {
-          if (y > pageHeight - 10) {
-            doc.addPage();
-            y = 10;
-          }
-          doc.text(line, 10, y);
-          y += 10;
-        });
-
-        // Trigger the download
-        doc.save(filename);
-        showPopup("Report downloaded!", false);
-
-        document.getElementById("downloadReportBtn").disabled = false;
-        document.getElementById("downloadReportBtn").textContent =
-          "Download Report";
-      }
-
-      // Helper function to display test results with better formatting
-      function displayResult(data) {
-        const resultDiv = document.getElementById("result");
-        const resultItem = document.createElement("div");
-        resultItem.className = `result-item ${data.severity || "info"}`;
-
-        // Create the icon element based on severity
-        const icon = document.createElement("span");
-        icon.className = "result-icon";
-
-        if (data.severity === "critical") {
-          icon.innerHTML = "❌";
-          icon.className += " icon-critical";
-        } else if (data.severity === "warning") {
-          icon.innerHTML = "⚠️";
-          icon.className += " icon-warning";
-        } else {
-          icon.innerHTML = "✅";
-          icon.className += " icon-safe";
+            })
+            .finally(() => {
+              document.getElementById("generateReportBtn").disabled = false;
+              document.getElementById("generateReportBtn").textContent =
+                "Generate Report";
+            });
         }
 
-        // Create the content element
-        const content = document.createElement("div");
-        content.className = "result-content";
+        // Add a function to format markdown to HTML with syntax highlighting
+        function formatMarkdownReport(markdown) {
+          // Basic markdown to HTML conversion
+          // Headers
+          let html = markdown
+            .replace(/^# (.*$)/gm, "<h1>$1</h1>")
+            .replace(/^## (.*$)/gm, "<h2>$1</h2>")
+            .replace(/^### (.*$)/gm, "<h3>$1</h3>")
+            .replace(/^#### (.*$)/gm, "<h4>$1</h4>")
+            .replace(/^##### (.*$)/gm, "<h5>$1</h5>")
+            .replace(/^###### (.*$)/gm, "<h6>$1</h6>");
 
-        const title = document.createElement("div");
-        title.className = "result-title";
-        title.textContent = data.testName;
+          // Bold and italic
+          html = html
+            .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+            .replace(/\*(.*?)\*/g, "<em>$1</em>")
+            .replace(/\_\_(.*?)\_\_/g, "<strong>$1</strong>")
+            .replace(/\_(.*?)\_/g, "<em>$1</em>");
 
-        const description = document.createElement("div");
-        description.className = "result-description";
-        description.textContent = data.result;
+          // Newlines
+          html = html.replace(/\n/g, "<br/>");
 
-        content.appendChild(title);
-        content.appendChild(description);
+          // Lists
+          html = html.replace(/^\s*\-\s*(.*$)/gm, "<li>$1</li>");
+          html = html.replace(/(<li>.*<\/li>)/gs, "<ul>$1</ul>");
 
-        // Add elements to the result item
-        resultItem.appendChild(icon);
-        resultItem.appendChild(content);
+          // Code blocks
+          html = html.replace(/`([^`]+)`/g, "<code>$1</code>");
 
-        // Add the result item to the results container
-        resultDiv.appendChild(resultItem);
-      }
-    </script>
-  </body>
-</html>
+          // Highlight severity text with colors
+          html = html
+            .replace(
+              /Critical Vulnerabilities/g,
+              '<span class="severity-critical">Critical Vulnerabilities</span>'
+            )
+            .replace(
+              /Medium-Risk Issues/g,
+              '<span class="severity-medium">Medium-Risk Issues</span>'
+            )
+            .replace(
+              /Secure Configurations/g,
+              '<span class="severity-safe">Secure Configurations</span>'
+            )
+            .replace(
+              /Critical/g,
+              '<span class="severity-critical">Critical</span>'
+            )
+            .replace(/High/g, '<span class="severity-high">High</span>')
+            .replace(/Medium/g, '<span class="severity-medium">Medium</span>')
+            .replace(/Low/g, '<span class="severity-low">Low</span>');
+          return html;
+        }
+
+        // Download report function
+        function downloadReport() {
+          const { jsPDF } = window.jspdf; // Access jsPDF from the global object
+
+          const filename =
+            "security_report_" +
+            document
+              .getElementById("urlInput")
+              .value.replace(/[^a-z0-9]/gi, "_")
+              .toLowerCase() +
+            ".pdf";
+          const reportContent = document.getElementById("reportContent").innerText; // Assuming this element has report data
+
+          document.getElementById("downloadReportBtn").disabled = true;
+          document.getElementById("downloadReportBtn").textContent =
+            "Generating PDF...";
+
+          // Using jsPDF library
+          const doc = new jsPDF();
+          const pageHeight = doc.internal.pageSize.height;
+          let y = 10; // Starting Y position for text
+
+          const lines = doc.splitTextToSize(reportContent, 180); // Split text into multiple lines
+          lines.forEach((line, index) => {
+            if (y > pageHeight - 10) {
+              doc.addPage();
+              y = 10;
+            }
+            doc.text(line, 10, y);
+            y += 10;
+          });
+
+          // Trigger the download
+          doc.save(filename);
+          showPopup("Report downloaded!", false);
+
+          document.getElementById("downloadReportBtn").disabled = false;
+          document.getElementById("downloadReportBtn").textContent =
+            "Download Report";
+        }
+
+        // Helper function to display test results with better formatting
+        function displayResult(data) {
+          const resultDiv = document.getElementById("result");
+          const resultItem = document.createElement("div");
+          resultItem.className = `result-item ${data.severity || "info"}`;
+
+          // Create the icon element based on severity
+          const icon = document.createElement("span");
+          icon.className = "result-icon";
+
+          if (data.severity === "critical") {
+            icon.innerHTML = "❌";
+            icon.className += " icon-critical";
+          } else if (data.severity === "warning") {
+            icon.innerHTML = "⚠️";
+            icon.className += " icon-warning";
+          } else {
+            icon.innerHTML = "✅";
+            icon.className += " icon-safe";
+          }
+
+          // Create the content element
+          const content = document.createElement("div");
+          content.className = "result-content";
+
+          const title = document.createElement("div");
+          title.className = "result-title";
+          title.textContent = data.testName;
+
+          const description = document.createElement("div");
+          description.className = "result-description";
+          description.textContent = data.result;
+
+          content.appendChild(title);
+          content.appendChild(description);
+
+          // Add elements to the result item
+          resultItem.appendChild(icon);
+          resultItem.appendChild(content);
+
+          // Add the result item to the results container
+          resultDiv.appendChild(resultItem);
+        }
+      </script>
+    </body>
+  </html>

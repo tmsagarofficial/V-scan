@@ -406,7 +406,7 @@ def generate_report():
 
         try:
             # Call Gemini API
-            model = genai.GenerativeModel('gemini-1.5-pro')
+            model = genai.GenerativeModel('gemini-2.0-flash')
             generation_config = {
                 "temperature": 0.7,
                 "top_p": 0.95,
@@ -414,37 +414,50 @@ def generate_report():
                 "max_output_tokens": 8192,
             }
 
+            # Generate the response
             response = model.generate_content(
                 prompt,
                 generation_config=generation_config,
                 safety_settings=[
-                    {"category": "HARM_CATEGORY_HARASSMENT",
-                        "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
-                    {"category": "HARM_CATEGORY_HATE_SPEECH",
-                        "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
-                    {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
-                        "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
-                    {"category": "HARM_CATEGORY_DANGEROUS_CONTENT",
-                        "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
+                    {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
+                    {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
+                    {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
+                    {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
                 ]
             )
-
-            # Handle response based on Gemini API structure
-            if hasattr(response, 'text'):
-                report = response.text
-            else:
-                # For Gemini's PaLM-like response fallback
-                report = response.candidates[0].content.parts[0].text
-
+            
+            # Extract the text from the response
+            # For Gemini API responses (using the correct extraction method based on the API version)
+            try:
+                if hasattr(response, 'text'):
+                    report = response.text
+                elif hasattr(response, 'parts'):
+                    report = response.parts[0].text
+                else:
+                    # Access the first candidate's content
+                    report = response.candidates[0].content.parts[0].text
+            except Exception as extraction_error:
+                logging.error(f"Error extracting text from Gemini response: {str(extraction_error)}")
+                # Use local fallback if we can't extract the text
+                report = generate_local_report(url, scan_results, severity_counts)
+                
+            # Return the successful response
             return jsonify({"report": report}), 200
 
-        except Exception as e:
-            logging.error(f"Error with Gemini API: {str(e)}")
-            return jsonify({"error": "Error while generating report"}), 500
+        except Exception as api_error:
+            logging.error(f"Error with Gemini API: {str(api_error)}")
+            # Use local fallback if API fails
+            report = generate_local_report(url, scan_results, severity_counts)
+            return jsonify({"report": report, "note": "Used local fallback due to API error"}), 200
 
     except Exception as e:
         logging.error(f"Error generating report: {str(e)}")
-        return jsonify({"error": f"Error generating report: {str(e)}"}), 500
+        # Last resort fallback
+        try:
+            report = generate_local_report(url, scan_results, severity_counts)
+            return jsonify({"report": report, "note": "Used fallback report"}), 200
+        except:
+            return jsonify({"error": f"Error generating report: {str(e)}"}), 500
 
 
 if __name__ == "__main__":
