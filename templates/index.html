@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Web Vulnerability Scanner</title>
+    <title>V-Scan</title>
     <link
       rel="icon"
       type="image/png"
@@ -462,7 +462,8 @@
 
   <body>
     <div class="header">
-      <h1>Web Vulnerability Scanner</h1>
+      <h1>V-Scan</h1>
+      <h2>Web Vulnerability/Misconfiguration Scanner</h2>
       <p>
         Analyze websites for security vulnerabilities and generate AI-powered
         reports
@@ -532,6 +533,9 @@
     </div>
 
     <div id="popup" class="popup"></div>
+    <footer class="footer" style="text-align: center; padding: 20px; ">
+      <p>&copy; 2025 V-Scan | Secure your web assets effectively.</p>
+  </footer>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
       <script>
         let startTime;
@@ -726,7 +730,7 @@
           document.getElementById("generateReportBtn").textContent =
             "Generating...";
           document.getElementById("reportContent").innerHTML =
-            '<div class="loading">Generating AI security report...<div class="spinner"></div></div>';
+            '<div class="loading">Generating report...<div class="spinner"></div></div>';
 
           // Prepare scan results for the API
           const resultsForAI = scanResults.map((item) => {
