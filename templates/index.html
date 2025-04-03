@@ -596,7 +596,7 @@
           showPopup("Scan started...", false);
 
           // Start the scan
-          fetch("http://13.126.124.150:5000/scan", {
+          fetch("https://vscan.v-tech.site/scan", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -649,7 +649,7 @@
 
         function listenForResults(scanId) {
           const eventSource = new EventSource(
-            `http://13.126.124.150:5000/scan-results/${scanId}`
+            `https://vscan.v-tech.site/scan-results/${scanId}`
           );
 
           eventSource.onmessage = function (event) {
@@ -738,7 +738,7 @@
           });
 
           // Call backend endpoint for AI report generation
-          fetch("http://13.126.124.150:5000/generate-report", {
+          fetch("https://vscan.v-tech.site/generate-report", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
