@@ -1,0 +1,15 @@
+nohup: ignoring input
+[2025-03-18 15:32:01 +0000] [2386] [INFO] Starting gunicorn 23.0.0
+[2025-03-18 15:32:01 +0000] [2386] [INFO] Listening at: http://127.0.0.1:5000 (2386)
+[2025-03-18 15:32:01 +0000] [2386] [INFO] Using worker: sync
+[2025-03-18 15:32:01 +0000] [2387] [INFO] Booting worker with pid: 2387
+[2025-03-18 15:32:01 +0000] [2388] [INFO] Booting worker with pid: 2388
+[2025-03-18 15:32:01 +0000] [2389] [INFO] Booting worker with pid: 2389
+[2025-03-18 15:32:01 +0000] [2390] [INFO] Booting worker with pid: 2390
+[2025-03-18 15:33:00 +0000] [2387] [INFO] Worker exiting (pid: 2387)
+[2025-03-18 15:33:00 +0000] [2386] [INFO] Handling signal: term
+[2025-03-18 15:33:00 +0000] [2388] [INFO] Worker exiting (pid: 2388)
+[2025-03-18 15:33:00 +0000] [2389] [INFO] Worker exiting (pid: 2389)
+[2025-03-18 15:33:00 +0000] [2390] [INFO] Worker exiting (pid: 2390)
+[2025-03-18 15:33:00 +0000] [2386] [ERROR] Worker (pid:2387) was sent SIGTERM!
+[2025-03-18 15:33:00 +0000] [2386] [INFO] Shutting down: Master

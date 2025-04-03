@@ -596,7 +596,8 @@
           showPopup("Scan started...", false);
 
           // Start the scan
-          fetch("http://13.126.124.150:5000/scan", {
+          fetch("http://
+127.0.0.1:5000/scan", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -649,7 +650,7 @@
 
         function listenForResults(scanId) {
           const eventSource = new EventSource(
-            `http://13.126.124.150:5000/scan-results/${scanId}`
+            `http://127.0.0.1:5000/scan-results/${scanId}`
           );
 
           eventSource.onmessage = function (event) {
@@ -738,7 +739,7 @@
           });
 
           // Call backend endpoint for AI report generation
-          fetch("http://13.126.124.150:5000/generate-report", {
+          fetch("http://127.0.0.1:5000/generate-report", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
